@@ -6,7 +6,7 @@ echo "[entrypoint] Container started at $(date)"
 
 # Запуск сервера на 80 порту — твой main.py
 echo "[entrypoint] Starting main.py..."
-python3 /opt/proxy/main.py &
+python3 /app/main.py &
 
 # Можно добавить curl-запросы к localhost — чтобы симулировать активность
 while true; do
