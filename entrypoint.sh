@@ -4,7 +4,7 @@ echo "[entrypoint] Container started at $(date)"
 echo "[entrypoint] Starting main.py..."
 
 # Запускаем main.py в фоне
-python3 /opt/proxy/main.py &
+python3 /app/main.py &
 MAIN_PID=$!
 
 # Периодически делаем curl localhost, чтобы не дать контейнеру заснуть
