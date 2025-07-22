@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 
-echo "[SELF-PING] Starting loop..." >> /opt/selfping.log
+URL="http://127.0.0.1:8080/health"
+INTERVAL=60
 
 while true; do
-  date >> /opt/selfping.log
-  curl -s http://127.0.0.1:8080/status >> /opt/selfping.log
-  echo "" >> /opt/selfping.log
-  sleep 20
+  echo "[SELFPING] $(date) ping $URL"
+  curl -s --max-time 5 "$URL" > /dev/null || echo "[SELFPING] FAIL"
+  sleep "$INTERVAL"
 done
