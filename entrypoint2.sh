@@ -1,13 +1,8 @@
 #!/bin/sh
-set -e
 
-echo "[ENTRYPOINT] Запуск hls-proxy..."
+echo "[ENTRYPOINT] Starting HLS Proxy..."
 /opt/hlsp/hls-proxy -config-path /opt/hlsp/config -address 0.0.0.0 -port 8080 &
-PID_PROXY=$!
 
-echo "[ENTRYPOINT] Запуск selfping..."
-/selfping.sh &
-PID_PING=$!
-
-# Ловим завершение
-wait $PID_PROXY
+sleep 2
+echo "[ENTRYPOINT] Starting selfping..."
+/opt/selfping.sh
