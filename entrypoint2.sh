@@ -6,3 +6,4 @@ echo "[ENTRYPOINT] Starting HLS Proxy..."
 sleep 2
 echo "[ENTRYPOINT] Starting selfping..."
 exec /opt/selfping.sh
+while true; do sleep 300; done
