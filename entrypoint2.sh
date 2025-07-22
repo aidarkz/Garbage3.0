@@ -3,8 +3,8 @@
 set -e
 
 PROXY_BIN="/opt/hlsp/hls-proxy"
-PROXY_ARGS="-address 0.0.0.0"
-HEALTH_URL="http://lxuwvqoc.deploy.cx/health"
+PROXY_ARGS="-address 0.0.0.0:8080"
+HEALTH_URL="http://lxuwvqoc.deploy.cx:8080/health"
 CHECK_INTERVAL=60
 
 log() {
