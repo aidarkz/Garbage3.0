@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/sh
+set -e
 
-# Запускаем HLS Proxy в фоне
+# Запускаем HLS Proxy
 /opt/hlsp/hls-proxy -config-path /opt/hlsp/config -address 0.0.0.0 -port 8080 &
-HLS_PID=$!
 
-# Пингуем локально, чтобы прокси не заснул
-/opt/selfping.sh &
+# Пингер в фоне
+/selfping.sh &
 
-# Ждём завершения основного процесса
-wait $HLS_PID
+# Ждём завершения
+wait
