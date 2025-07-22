@@ -11,7 +11,7 @@ function log() {
 
 function start_proxy() {
     log "🔄 Starting hls-proxy..."
-    "$APP_BIN" &
+    "$APP_BIN" -address 0.0.0.0 &
     PROXY_PID=$!
     log "✅ hls-proxy started with PID $PROXY_PID"
 }
