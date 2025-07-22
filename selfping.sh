@@ -1,6 +1,6 @@
 #!/bin/sh
 
-URL="http://127.0.0.1:8080/health"
+URL="http://127.0.0.1:8080/"
 INTERVAL=60
 
 while true; do
