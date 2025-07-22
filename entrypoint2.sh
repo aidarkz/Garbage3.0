@@ -1,55 +1,45 @@
 #!/bin/bash
+
 set -e
 
-APP_BIN="/opt/hlsp/hls-proxy"
+PROXY_BIN="/opt/hlsp/hls-proxy"
+PROXY_ARGS="-address 0.0.0.0"
 HEALTH_URL="http://lxuwvqoc.deploy.cx/health"
-LOG_FILE="/var/log/proxy_watchdog.log"
+CHECK_INTERVAL=60
 
-function log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+log() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
-function start_proxy() {
-    log "🔄 Starting hls-proxy..."
-    "$APP_BIN" -address 0.0.0.0 &
-    PROXY_PID=$!
-    log "✅ hls-proxy started with PID $PROXY_PID"
+start_proxy() {
+  log "🔄 Starting hls-proxy..."
+  $PROXY_BIN $PROXY_ARGS &
+  PROXY_PID=$!
+  log "✅ hls-proxy started with PID $PROXY_PID"
 }
 
-function stop_proxy() {
-    if [ -n "$PROXY_PID" ]; then
-        log "🛑 Stopping hls-proxy (PID $PROXY_PID)..."
-        kill "$PROXY_PID" 2>/dev/null || true
-        wait "$PROXY_PID" 2>/dev/null || true
-        PROXY_PID=""
-    fi
+kill_proxy() {
+  if kill -0 "$PROXY_PID" 2>/dev/null; then
+    log "🛑 Killing hls-proxy with PID $PROXY_PID..."
+    kill "$PROXY_PID"
+    wait "$PROXY_PID" 2>/dev/null || true
+  fi
 }
 
-function health_check() {
-    curl -s --max-time 5 "$HEALTH_URL" | grep -q '"status": *"ok"'
-    return $?
-}
+trap 'log "🚨 Caught SIGTERM. Shutting down..."; kill_proxy; exit 0' SIGTERM
 
 log "🚀 Entrypoint started"
 
 start_proxy
 
-# Вечный цикл наблюдения
 while true; do
-    sleep 60
+  sleep $CHECK_INTERVAL
 
-    if ! ps -p "$PROXY_PID" > /dev/null; then
-        log "⚠️ hls-proxy is not running!"
-        stop_proxy
-        start_proxy
-        continue
-    fi
-
-    if ! health_check; then
-        log "❌ Health check failed. Restarting hls-proxy..."
-        stop_proxy
-        start_proxy
-    else
-        log "✅ Health check passed"
-    fi
+  if curl -fs "$HEALTH_URL" >/dev/null; then
+    log "✅ Health check passed"
+  else
+    log "❌ Health check failed, restarting proxy"
+    kill_proxy
+    start_proxy
+  fi
 done
