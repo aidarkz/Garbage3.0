@@ -5,4 +5,4 @@ echo "[ENTRYPOINT] Starting HLS Proxy..."
 
 sleep 2
 echo "[ENTRYPOINT] Starting selfping..."
-/opt/selfping.sh
+exec /opt/selfping.sh
