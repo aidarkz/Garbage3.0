@@ -1,15 +1,6 @@
-#!/bin/bash
+#!/bin/sh
+echo "[ENTRYPOINT] Starting HLS-Proxy..."
+/opt/hlsp/hls-proxy -address 0.0.0.0:8080 &
 
-# Запускаем Nginx, если нужен
-nginx
-
-# Даём 1 секунду на инициализацию
-sleep 1
-
-# Запускаем HLS-прокси в фоне с логированием
-/opt/hlsp/hls-proxy -address 0.0.0.0:8080 >> /var/log/hls-proxy.log 2>&1 &
-
-# Keep container alive (можно заменить на `tail -f` или `wait`)
-while true; do
-    sleep 60
-done
+echo "[ENTRYPOINT] Entrypoint finished, keeping container alive"
+# После выходя из entrypoint, tail будет держать контейнер в режиме работы
