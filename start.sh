@@ -8,4 +8,4 @@ mkdir -p /opt/hlsp/logs
 touch "$LOG_FILE"
 
 # Запуск hls_proxy в foreground и логирование
-exec /opt/hlsp/hls_proxy >> "$LOG_FILE" 2>&1
+exec /opt/hlsp/hls-proxy >> "$LOG_FILE" 2>&1
