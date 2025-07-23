@@ -1,26 +1,15 @@
 #!/bin/bash
 
-# Запуск nginx, если нужен
-service nginx start
+# Запускаем Nginx, если нужен
+nginx
 
-# Запуск HLS-прокси в фоне
-/opt/hlsp/hls-proxy -address 0.0.0.0:8080 &
+# Даём 1 секунду на инициализацию
+sleep 1
 
-# PID для отслеживания
-PID=$!
+# Запускаем HLS-прокси в фоне с логированием
+/opt/hlsp/hls-proxy -address 0.0.0.0:8080 >> /var/log/hls-proxy.log 2>&1 &
 
-# Цикл пинга к /health и перезапуска, если процесс упал
+# Keep container alive (можно заменить на `tail -f` или `wait`)
 while true; do
-    sleep 30
-
-    # Проверяем жив ли процесс
-    if ! kill -0 "$PID" 2>/dev/null; then
-        echo "[ERROR] hls-proxy crashed, restarting..."
-        /opt/hlsp/hls-proxy -address 0.0.0.0:8080 &
-        PID=$!
-        continue
-    fi
-
-    # Keep-alive пинг
-    curl -s http://127.0.0.1:8080/health >/dev/null || echo "[WARN] /health unavailable"
+    sleep 60
 done
