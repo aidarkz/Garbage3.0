@@ -1,17 +1,19 @@
 #!/bin/bash
 set -e
 
-# Запуск HLS-прокси (в фоне)
-echo "[INFO] starting HLS-Proxy"
-/opt/hlsp/HLS-Proxy &
+# Запуск hls-proxy в фоне
+/opt/hlsp/hls-proxy -address 0.0.0.0 -port 8080 &
 
-# Keep-alive запрос каждые 60 сек
+HLS_PID=$!
+
+# Keep-alive пинг каждые 60 секунд
 (
-  while true; do
-    curl -s -o /dev/null -w "[keep-alive] %{http_code} at %{time_total}s\n" http://127.0.0.1:8080/
+  while kill -0 "$HLS_PID" 2>/dev/null; do
+    CODE=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/)
+    echo "[keep-alive] status: $CODE"
     sleep 60
   done
 ) &
 
 # Ждём завершения основного процесса
-wait %1
+wait "$HLS_PID"
