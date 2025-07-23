@@ -57,3 +57,5 @@ while true; do
         start_proxy
     fi
 done
+# ⬇️ Добавить вот это:
+wait
