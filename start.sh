@@ -10,23 +10,28 @@ log() {
   echo "[start.sh] $(date '+%Y-%m-%d %H:%M:%S') $*"
 }
 
+# запустить hls-proxy в фоне
+run_proxy() {
+  log "▶️ Запуск hls-proxy..."
+  $PROXY_BIN $PROXY_ARGS &
+  PROXY_PID=$!
+  log "🆔 PID hls-proxy: $PROXY_PID"
+}
+
 keepalive_loop() {
   sleep 5
   while true; do
     sleep $CHECK_INTERVAL
-    curl -fs "$HEALTH_LOCAL_URL" >/dev/null \
-      && log "📡 Прокси жив (localhost)" \
-      || log "⚠️ Нет ответа от прокси на localhost"
+    if curl -fs "$HEALTH_LOCAL_URL" >/dev/null; then
+      log "📡 Прокси жив (localhost)"
+    else
+      log "⚠️ Нет ответа от прокси. Пробуем перезапуск..."
+      kill -9 $PROXY_PID 2>/dev/null || true
+      run_proxy
+    fi
   done
 }
 
-log "🚀 Старт Keep-Alive loop..."
-keepalive_loop &
-
-log "🔁 Запуск hls-proxy с автоперезапуском при сбое..."
-
-while true; do
-  $PROXY_BIN $PROXY_ARGS
-  log "⚠️ hls-proxy завершился, перезапуск через 3 секунды..."
-  sleep 3
-done
+log "🚀 Старт Keep-Alive loop и hls-proxy..."
+run_proxy
+keepalive_loop
