@@ -1,10 +1,11 @@
 #!/bin/bash
+set -e
 
-# Стартуем nginx в фоне
-service nginx start
+# Стартуем nginx (если требуется)
+service nginx start || true
 
-# Ждём пару секунд (иногда nginx может не успеть подняться)
+# Ждём пару секунд (на всякий случай)
 sleep 2
 
-# Стартуем hls-proxy как основной процесс (без &!)
-exec /opt/hlsp/hls-proxy -address 0.0.0.0 -port 8080
+# Запускаем hls-proxy как основной процесс
+exec /opt/hlsp/hls-proxy --config /opt/hlsp/config.json
