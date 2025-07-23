@@ -3,7 +3,7 @@ set -e
 
 PROXY_BIN="/opt/hlsp/hls-proxy"
 PROXY_ARGS="-address 0.0.0.0:8080"
-HEALTH_LOCAL_URL="http://127.0.0.1:8080/n58c5b493/index.m3u8?q=1753280172771"
+HEALTH_LOCAL_URL="http://127.0.0.1:8080/channel/n58c5b493/index.m3u8?q=1753280172771"
 CHECK_INTERVAL=60
 
 log() {
