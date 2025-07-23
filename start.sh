@@ -1,29 +1,12 @@
 #!/bin/bash
 
-# Лог-файлы
-LOG_DIR="/opt/hlsp/logs"
-LOG_FILE="$LOG_DIR/proxy.log"
+LOG_FILE="/opt/hlsp/logs/proxy.log"
+echo "[INIT] Starting HLS proxy at $(date)" >> "$LOG_FILE"
 
-mkdir -p "$LOG_DIR"
+/usr/local/bin/python3 /opt/hlsp/hls_proxy.py >> "$LOG_FILE" 2>&1 &
 
-echo "[start.sh] Starting HLS-Proxy at $(date)" >> "$LOG_FILE"
-
-# Функция запуска
-start_proxy() {
-    echo "[start.sh] Launching HLS-Proxy..." >> "$LOG_FILE"
-    /opt/hlsp/hls-proxy -address 0.0.0.0 -port 8080 >> "$LOG_FILE" 2>&1 &
-    PROXY_PID=$!
-    echo "[start.sh] Proxy PID: $PROXY_PID" >> "$LOG_FILE"
-}
-
-# Первый запуск
-start_proxy
-
-# Keep-alive цикл
+# Keep-alive, чтобы контейнер не завершался
 while true; do
-    if ! kill -0 $PROXY_PID 2>/dev/null; then
-        echo "[start.sh] HLS-Proxy crashed at $(date), restarting..." >> "$LOG_FILE"
-        start_proxy
-    fi
-    sleep 5
+    echo "[ALIVE] $(date)" >> "$LOG_FILE"
+    sleep 60
 done
