@@ -14,7 +14,7 @@ keepalive_loop() {
   sleep 5
   while true; do
     sleep $CHECK_INTERVAL
-    curl -fs "$HEALTH_URL" >/dev/null \
+    curl -fs "$HEALTH_LOCAL_URL" >/dev/null \
       && log "📡 Прокси жив (localhost)" \
       || log "⚠️ Нет ответа от прокси на localhost"
   done
