@@ -1,33 +1,31 @@
 #!/bin/bash
 
-HLS_PROXY_BIN="/opt/hlsp/hls-proxy"
-PORT=8080
-CHECK_INTERVAL=10
+set -e
 
-start_proxy() {
-    echo "[START] Запуск HLS-прокси..."
-    $HLS_PROXY_BIN -address 0.0.0.0 -port $PORT &
-    PROXY_PID=$!
+PROXY_BIN="/opt/hlsp/hls-proxy"
+PROXY_ARGS="-address 0.0.0.0:8080"
+HEALTH_URL="http://127.0.0.1:8080/channel/101/index.m3u8"
+CHECK_INTERVAL=60
+
+log() {
+  echo "[start.sh] $(date '+%Y-%m-%d %H:%M:%S') $*"
 }
 
-check_status() {
-    curl -s "http://127.0.0.1:$PORT/status" | grep -q "uptime"
+# 🎯 Фоновый watchdog, НЕ главный процесс!
+watchdog_loop() {
+  sleep 10
+  while true; do
+    sleep $CHECK_INTERVAL
+    if curl -fs "$HEALTH_URL" >/dev/null; then
+      log "✅ Канал отвечает OK"
+    else
+      log "❌ Канал не отвечает! (no /channel/101)"
+    fi
+  done
 }
 
-# Бесконечный цикл слежения
-while true; do
-    start_proxy
+log "🚀 Старт watchdog в фоне..."
+watchdog_loop &
 
-    while kill -0 "$PROXY_PID" 2>/dev/null; do
-        sleep $CHECK_INTERVAL
-        if ! check_status; then
-            echo "[WARN] /status недоступен. Перезапуск HLS-прокси..."
-            kill -9 "$PROXY_PID"
-            wait "$PROXY_PID" 2>/dev/null
-            break
-        fi
-    done
-
-    echo "[INFO] HLS-прокси завершился. Перезапуск через 5 секунд..."
-    sleep 5
-done
+log "▶️ Запуск hls-proxy как главный процесс..."
+exec $PROXY_BIN $PROXY_ARGS
