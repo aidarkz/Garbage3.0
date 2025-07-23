@@ -3,7 +3,7 @@
 echo "[ENTRYPOINT] Starting IPTV proxy with watchdog..."
 
 # Запускаем основной процесс в фоне
-/start.sh &
+/opt/hlsp/start.sh &
 MAIN_PID=$!
 echo "[ENTRYPOINT] start.sh запущен с PID $MAIN_PID"
 
@@ -19,7 +19,7 @@ while true; do
         kill -9 $MAIN_PID 2>/dev/null
 
         # Перезапуск
-        /start.sh &
+        /opt/hlsp/start.sh &
         MAIN_PID=$!
         echo "[WATCHDOG] 🔁 start.sh перезапущен с PID $MAIN_PID"
     else
