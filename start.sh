@@ -1,31 +1,27 @@
 #!/bin/bash
-
 set -e
 
 PROXY_BIN="/opt/hlsp/hls-proxy"
 PROXY_ARGS="-address 0.0.0.0:8080"
-HEALTH_URL="https://uhnauyno.deploy.cx/channel/n58c5b493/index.m3u8?q=1753280172771"
+HEALTH_LOCAL_URL="http://127.0.0.1:8080/n58c5b493/index.m3u8?q=1753280172771"
 CHECK_INTERVAL=60
 
 log() {
   echo "[start.sh] $(date '+%Y-%m-%d %H:%M:%S') $*"
 }
 
-# 🎯 Фоновый watchdog, НЕ главный процесс!
-watchdog_loop() {
-  sleep 10
+keepalive_loop() {
+  sleep 5
   while true; do
     sleep $CHECK_INTERVAL
-    if curl -fs "$HEALTH_URL" >/dev/null; then
-      log "✅ Канал отвечает OK"
-    else
-      log "❌ Канал не отвечает! (no /channel/101)"
-    fi
+    curl -fs "$HEALTH_LOCAL_URL" >/dev/null \
+      && log "📡 Прокси жив (localhost)" \
+      || log "⚠️ Нет ответа от прокси на localhost"
   done
 }
 
-log "🚀 Старт watchdog в фоне..."
-watchdog_loop &
+log "🚀 Старт Keep-Alive loop..."
+keepalive_loop &
 
-log "▶️ Запуск hls-proxy как главный процесс..."
+log "▶️ Запуск hls-proxy как основной процесс..."
 exec $PROXY_BIN $PROXY_ARGS
