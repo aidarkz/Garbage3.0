@@ -23,5 +23,10 @@ keepalive_loop() {
 log "🚀 Старт Keep-Alive loop..."
 keepalive_loop &
 
-log "▶️ Запуск hls-proxy как основной процесс..."
-exec $PROXY_BIN $PROXY_ARGS
+log "🔁 Запуск hls-proxy с автоперезапуском при сбое..."
+
+while true; do
+  $PROXY_BIN $PROXY_ARGS
+  log "⚠️ hls-proxy завершился, перезапуск через 3 секунды..."
+  sleep 3
+done
