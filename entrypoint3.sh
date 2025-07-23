@@ -2,6 +2,7 @@
 
 WATCHDOG_INTERVAL=60
 WATCHDOG_TIMEOUT=5
+TEST_CHANNEL_ID=101
 
 start_proxy() {
     echo "[START] Запуск HLS-прокси..."
@@ -20,7 +21,6 @@ stop_proxy() {
         fi
         rm -f /tmp/proxy.pid
     else
-        echo "[WATCHDOG] ⚠️ Нет PID-файла, ищем вручную"
         PID=$(lsof -ti:8080)
         if [ -n "$PID" ]; then
             echo "[WATCHDOG] 🛑 Убиваем процесс на 8080: PID $PID"
@@ -34,19 +34,23 @@ watchdog_loop() {
     while true; do
         sleep "$WATCHDOG_INTERVAL"
 
-        echo "[WATCHDOG] 🔎 Проверка доступности /status"
-        if ! curl -s --max-time "$WATCHDOG_TIMEOUT" http://127.0.0.1:8080/status > /dev/null; then
-            echo "[WATCHDOG] ❌ /status недоступен, перезапуск start.sh..."
+        echo "[WATCHDOG] 🔎 Проверка работоспособности HLS-канала..."
+
+        TEST_URL="http://127.0.0.1:8080/channel/n58c5b493/index.m3u8?q=1753280172771"
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time "$WATCHDOG_TIMEOUT" "$TEST_URL")
+
+        if [[ "$HTTP_CODE" != "200" ]]; then
+            echo "[WATCHDOG] ❌ Канал $TEST_CHANNEL_ID не отвечает (код $HTTP_CODE), перезапуск..."
             stop_proxy
             start_proxy
         else
-            echo "[WATCHDOG] ✅ /status OK"
+            echo "[WATCHDOG] ✅ Канал $TEST_CHANNEL_ID отвечает OK"
         fi
     done
 }
 
-# ────────── Первый старт ──────────
+# ────────── Первый запуск ──────────
 start_proxy
 
-# ────────── Запуск цикла ──────────
+# ────────── Запуск watchdog ──────────
 watchdog_loop
