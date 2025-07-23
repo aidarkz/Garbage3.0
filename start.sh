@@ -1,9 +1,11 @@
 #!/bin/bash
 
-echo "[INFO] Starting HLS-Proxy 8.4.8"
+LOG_FILE="/opt/hlsp/logs/proxy.log"
+echo "[INIT] Starting HLS proxy at $(date)" >> "$LOG_FILE"
 
-while true; do
-  /opt/hlsp/hls-proxy -address 0.0.0.0 -port 8080
-  echo "[WARN] hls-proxy crashed or exited. Restarting in 3 seconds..."
-  sleep 3
-done
+# Убедимся, что лог-файл существует
+mkdir -p /opt/hlsp/logs
+touch "$LOG_FILE"
+
+# Запуск hls_proxy в foreground и логирование
+exec /opt/hlsp/hls_proxy >> "$LOG_FILE" 2>&1
