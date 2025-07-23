@@ -1,19 +1,29 @@
 #!/bin/bash
-set -e
 
-# Запуск hls-proxy в фоне
-/opt/hlsp/hls-proxy -address 0.0.0.0 -port 8080 &
+# Лог-файлы
+LOG_DIR="/opt/hlsp/logs"
+LOG_FILE="$LOG_DIR/proxy.log"
 
-HLS_PID=$!
+mkdir -p "$LOG_DIR"
 
-# Keep-alive пинг каждые 60 секунд
-(
-  while kill -0 "$HLS_PID" 2>/dev/null; do
-    CODE=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/)
-    echo "[keep-alive] status: $CODE"
-    sleep 60
-  done
-) &
+echo "[start.sh] Starting HLS-Proxy at $(date)" >> "$LOG_FILE"
 
-# Ждём завершения основного процесса
-wait "$HLS_PID"
+# Функция запуска
+start_proxy() {
+    echo "[start.sh] Launching HLS-Proxy..." >> "$LOG_FILE"
+    /opt/hlsp/hls-proxy -address 0.0.0.0 -port 8080 >> "$LOG_FILE" 2>&1 &
+    PROXY_PID=$!
+    echo "[start.sh] Proxy PID: $PROXY_PID" >> "$LOG_FILE"
+}
+
+# Первый запуск
+start_proxy
+
+# Keep-alive цикл
+while true; do
+    if ! kill -0 $PROXY_PID 2>/dev/null; then
+        echo "[start.sh] HLS-Proxy crashed at $(date), restarting..." >> "$LOG_FILE"
+        start_proxy
+    fi
+    sleep 5
+done
