@@ -1,1 +1,1 @@
-* * * * * curl -s http://127.0.0.1/status > /dev/null 2>&1
+*/2 * * * * root curl -fs http://127.0.0.1:8282/status -H "X-Pass: admin" || echo "NO RESPONSE" >> /app/logs/keepalive-cron.log
