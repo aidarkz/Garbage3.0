@@ -4,7 +4,7 @@ import os
 import signal
 
 TARGET = "stalker_hls_proxy.py"
-RESTART_DELAY = 3 * 60  # 3 минуты
+RESTART_DELAY = 180  # 3 минуты
 
 def is_process_running(name):
     try:
