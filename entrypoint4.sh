@@ -7,7 +7,7 @@
 uvicorn stalker_hls_proxy:app --host 0.0.0.0 --port 8080 >> /app/api.log 2>&1 &
 
 # Keepalive-монитор в фоне с логом
-/app/keepalive.sh >> /app/keepalive-cron.log 2>&1 &
+/app/keepalive-cron.py >> /app/keepalive-cron.log 2>&1 &
 
 # Ждем завершения любого процесса
 wait -n
