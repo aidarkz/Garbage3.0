@@ -30,8 +30,8 @@ def get_cpu_usage():
 
 def ping_local_api():
     try:
-        conn = http.client.HTTPConnection("127.0.0.1", 8080, timeout=3)
-        conn.request("GET", "/ping")
+        conn = http.client.HTTPConnection("127.0.0.1", 8282, timeout=3)
+        conn.request("GET", "/status")
         resp = conn.getresponse()
         return resp.status == 200
     except Exception as e:
