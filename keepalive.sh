@@ -1,25 +1,21 @@
 #!/bin/bash
 
-LOG=/app/keepalive.log
+LOG_FILE="/app/keepalive-cron.log"
 
 while true; do
-    {
-        echo "[$(date)] keepalive"
-        echo "----- ps aux (top 10) -----"
-        ps aux | head -n 10
-        echo "----- memory (top 10 lines) -----"
-        head -n 10 /proc/meminfo
+  TIMESTAMP=$(date +%s)
+  HLS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8282/health)
+  API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1/api/status)
 
-        echo "----- process status -----"
-        HLS=$(pgrep -f hls-proxy >/dev/null && echo "✅" || echo "❌")
-        API=$(pgrep -f uvicorn    >/dev/null && echo "✅" || echo "❌")
-        echo "[KEEPALIVE] HLS-PROXY: $HLS | API: $API | ts=$(date +%s)"
-        echo "--------------------------"
-        echo
-    } >> "$LOG"
+  MEM=$(cat /sys/fs/cgroup/memory.current 2>/dev/null)
+  CPU=$(cat /sys/fs/cgroup/cpu.stat 2>/dev/null | grep usage_usec | awk '{sum += $2} END {print sum}')
 
-    # Также продублируем в stdout для логов Docker
-    echo "[KEEPALIVE] HLS-PROXY: $HLS | API: $API | ts=$(date +%s)"
+  echo "[KEEPALIVE] HLS-PROXY: $([[ $HLS_STATUS == 200 ]] && echo ✅ || echo ❌) | API: $([[ $API_STATUS == 200 ]] && echo ✅ || echo ❌) | ts=$TIMESTAMP | mem=${MEM:-?} | cpu=${CPU:-?}" >> "$LOG_FILE"
 
-    sleep 20
+  # дополнительно «шевелим» систему:
+  cat /proc/loadavg > /dev/null
+  cat /proc/meminfo > /dev/null
+  date > /dev/null
+  sleep 20
 done
+
