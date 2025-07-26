@@ -1,11 +1,11 @@
 import time
 import http.client
 import requests
+import subprocess
 from datetime import datetime
 
-LOG_FILE = "/app/keepalive-cron.log"
-INTERVAL = 20  # seconds
-
+LOG_FILE = "/app/logs/keepalive-cron.log"
+INTERVAL = 60  # seconds
 STREAM_URL = "http://127.0.0.1:8080/playlist1.m3u8?stream_id=111542"
 
 def log(msg):
@@ -52,6 +52,16 @@ def ping_stream():
     except:
         return False
 
+def log_system_info():
+    try:
+        uptime = subprocess.check_output(["uptime"]).decode().strip()
+        ps_output = subprocess.check_output(["ps", "aux"]).decode()
+        netstat_output = subprocess.check_output(["netstat", "-tunlp"]).decode()
+        log(f"\n--- SYSTEM INFO ---\nUptime: {uptime}\n\n[PS AUX]\n{ps_output}\n[NETSTAT]\n{netstat_output}")
+    except Exception as e:
+        log(f"[ERROR] Failed to log system info: {e}")
+
+counter = 0
 while True:
     ts = int(time.time())
     mem = get_mem_usage()
@@ -61,4 +71,9 @@ while True:
     ok_stream = ping_stream()
 
     log(f"NET: {'✅' if ok_net else '❌'} | API: {'✅' if ok_api else '❌'} | STREAM: {'✅' if ok_stream else '❌'} | ts={ts} | mem={mem} | cpu={cpu}")
+
+    if counter % 15 == 0:  # каждые 5 минут (20 сек * 15)
+        log_system_info()
+
+    counter += 1
     time.sleep(INTERVAL)
