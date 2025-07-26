@@ -1,24 +1,22 @@
 import time
 import http.client
-import os
+import requests
 from datetime import datetime
 
-LOG_DIR = "/app/logs"
-LOG_FILE = f"{LOG_DIR}/keepalive.log"
-INTERVAL = 20  # секунд
+LOG_FILE = "/app/keepalive-cron.log"
+INTERVAL = 20  # seconds
 
-os.makedirs(LOG_DIR, exist_ok=True)
+STREAM_URL = "http://127.0.0.1:8080/playlist1.m3u8?stream_id=111542"
 
 def log(msg):
     with open(LOG_FILE, "a") as f:
-        f.write(f"[{datetime.now().isoformat()}] {msg}\n")
+        f.write(f"[KEEPALIVE] {datetime.now().isoformat()} {msg}\n")
 
 def get_mem_usage():
     try:
         with open("/sys/fs/cgroup/memory.current") as f:
             return int(f.read().strip())
-    except Exception as e:
-        log(f"Ошибка чтения памяти: {e}")
+    except:
         return 0
 
 def get_cpu_usage():
@@ -27,8 +25,7 @@ def get_cpu_usage():
             for line in f:
                 if line.startswith("usage_usec"):
                     return int(line.split()[1])
-    except Exception as e:
-        log(f"Ошибка чтения CPU: {e}")
+    except:
         return 0
 
 def ping_local_api():
@@ -37,8 +34,7 @@ def ping_local_api():
         conn.request("GET", "/health")
         resp = conn.getresponse()
         return resp.status == 200
-    except Exception as e:
-        log(f"❌ Пинг /health не прошёл: {e}")
+    except:
         return False
 
 def ping_external():
@@ -46,8 +42,14 @@ def ping_external():
         conn = http.client.HTTPConnection("1.1.1.1", 80, timeout=3)
         conn.request("HEAD", "/")
         return True
-    except Exception as e:
-        log(f"❌ Внешний пинг не прошёл: {e}")
+    except:
+        return False
+
+def ping_stream():
+    try:
+        r = requests.get(STREAM_URL, timeout=3)
+        return r.status_code == 200
+    except:
         return False
 
 while True:
@@ -56,6 +58,7 @@ while True:
     cpu = get_cpu_usage()
     ok_api = ping_local_api()
     ok_net = ping_external()
+    ok_stream = ping_stream()
 
-    log(f"HLS-PROXY: {'✅' if ok_net else '❌'} | API: {'✅' if ok_api else '❌'} | ts={ts} | mem={mem} | cpu={cpu}")
+    log(f"NET: {'✅' if ok_net else '❌'} | API: {'✅' if ok_api else '❌'} | STREAM: {'✅' if ok_stream else '❌'} | ts={ts} | mem={mem} | cpu={cpu}")
     time.sleep(INTERVAL)
