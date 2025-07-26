@@ -1,79 +1,58 @@
-import time
 import http.client
+import logging
+import time
+import datetime
+import socket
 import requests
-import subprocess
-from datetime import datetime
 
-LOG_FILE = "/app/logs/keepalive-cron.log"
+LOG_PATH = "/app/logs/keepalive-cron.log"
+URL = "http://uhnauyno.deploy.cx/status"
 INTERVAL = 60  # seconds
-STREAM_URL = "http://127.0.0.1:8080/playlist1.m3u8?stream_id=111542"
 
-def log(msg):
-    with open(LOG_FILE, "a") as f:
-        f.write(f"[KEEPALIVE] {datetime.now().isoformat()} {msg}\n")
+# ──────────────── Логирование ──────────────── #
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(levelname).1s %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_PATH),
+        logging.StreamHandler()  # также выводим в stdout
+    ]
+)
+log = logging.getLogger("keepalive-cron")
 
-def get_mem_usage():
+def is_online():
+    """ Проверка наличия сети. """
     try:
-        with open("/sys/fs/cgroup/memory.current") as f:
-            return int(f.read().strip())
-    except:
-        return 0
-
-def get_cpu_usage():
-    try:
-        with open("/sys/fs/cgroup/cpu.stat") as f:
-            for line in f:
-                if line.startswith("usage_usec"):
-                    return int(line.split()[1])
-    except:
-        return 0
-
-def ping_local_api():
-    try:
-        conn = http.client.HTTPConnection("127.0.0.1", 8282, timeout=3)
-        conn.request("GET", "/status")
-        resp = conn.getresponse()
-        return resp.status == 200
-    except Exception as e:
-        return False
-
-def ping_external():
-    try:
-        conn = http.client.HTTPConnection("1.1.1.1", 80, timeout=3)
-        conn.request("HEAD", "/")
+        socket.create_connection(("8.8.8.8", 53), timeout=3)
         return True
-    except:
+    except OSError:
         return False
 
-def ping_stream():
+def ping_status_url():
+    """ Пингует внешний сервис. """
     try:
-        r = requests.get(STREAM_URL, timeout=3)
-        return r.status_code == 200
-    except:
-        return False
-
-def log_system_info():
-    try:
-        uptime = subprocess.check_output(["uptime"]).decode().strip()
-        ps_output = subprocess.check_output(["ps", "aux"]).decode()
-        netstat_output = subprocess.check_output(["netstat", "-tunlp"]).decode()
-        log(f"\n--- SYSTEM INFO ---\nUptime: {uptime}\n\n[PS AUX]\n{ps_output}\n[NETSTAT]\n{netstat_output}")
+        response = requests.get(URL, timeout=5)
+        if response.status_code == 200:
+            log.info(f"✅ ping {URL} → OK (200)")
+            return True
+        else:
+            log.warning(f"⚠️ ping {URL} → {response.status_code}")
+            return False
     except Exception as e:
-        log(f"[ERROR] Failed to log system info: {e}")
+        log.error(f"❌ Exception on ping {URL}: {e}")
+        return False
 
-counter = 0
-while True:
-    ts = int(time.time())
-    mem = get_mem_usage()
-    cpu = get_cpu_usage()
-    ok_api = ping_local_api()
-    ok_net = ping_external()
-    ok_stream = ping_stream()
+def main():
+    log.info("🟢 keepalive-cron запущен.")
+    while True:
+        now = datetime.datetime.now().isoformat()
 
-    log(f"NET: {'✅' if ok_net else '❌'} | API: {'✅' if ok_api else '❌'} | STREAM: {'✅' if ok_stream else '❌'} | ts={ts} | mem={mem} | cpu={cpu}")
+        if not is_online():
+            log.error("❌ Нет сетевого соединения (не пингуется 8.8.8.8)")
+        else:
+            ping_status_url()
 
-    if counter % 15 == 0:  # каждые 5 минут (20 сек * 15)
-        log_system_info()
+        time.sleep(INTERVAL)
 
-    counter += 1
-    time.sleep(INTERVAL)
+if __name__ == "__main__":
+    main()
