@@ -1,32 +1,30 @@
-import os
-import time
-import signal
 import subprocess
+import time
+import os
+import signal
 
-WATCHED_PROCESS_NAME = "main.py"
-RESTART_INTERVAL = 180  # каждые 3 минуты
+TARGET = "stalker_hls_proxy.py"
+RESTART_DELAY = 3 * 60  # 3 минуты
 
-def get_pid_by_name(name):
+def is_process_running(name):
     try:
-        output = subprocess.check_output(["pgrep", "-f", name])
-        pids = output.decode().strip().split("\n")
-        return [int(pid) for pid in pids]
-    except subprocess.CalledProcessError:
-        return []
-
-def restart_process(pid):
-    try:
-        print(f"[watchdog] Sending SIGTERM to PID {pid}")
-        os.kill(pid, signal.SIGTERM)
+        output = subprocess.check_output(['ps', 'aux'], text=True)
+        return any(name in line and 'python' in line for line in output.splitlines())
     except Exception as e:
-        print(f"[watchdog] Error killing PID {pid}: {e}")
+        print(f"[watchdog] Error checking process: {e}")
+        return False
 
-while True:
-    pids = get_pid_by_name(WATCHED_PROCESS_NAME)
-    if pids:
-        print(f"[watchdog] Found main.py at PIDs: {pids}")
-        for pid in pids:
-            restart_process(pid)
-    else:
-        print("[watchdog] main.py not found")
-    time.sleep(RESTART_INTERVAL)
+def restart_process():
+    print(f"[watchdog] Restarting {TARGET}")
+    try:
+        os.killpg(0, signal.SIGTERM)  # kill everything in group (supervised)
+    except Exception as e:
+        print(f"[watchdog] Failed to terminate: {e}")
+    subprocess.Popen(['python3', f'/app/{TARGET}'])
+
+if __name__ == "__main__":
+    while True:
+        if not is_process_running(TARGET):
+            print(f"[watchdog] Process {TARGET} not running, restarting...")
+            restart_process()
+        time.sleep(RESTART_DELAY)
