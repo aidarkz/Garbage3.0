@@ -17,7 +17,7 @@ def is_process_running(name):
 def restart_process():
     print(f"[watchdog] Restarting {TARGET}")
     try:
-        os.killpg(0, signal.SIGTERM)  # kill everything in group (supervised)
+        os.killpg(0, signal.SIGTERM)
     except Exception as e:
         print(f"[watchdog] Failed to terminate: {e}")
     subprocess.Popen(['python3', f'/app/{TARGET}'])
