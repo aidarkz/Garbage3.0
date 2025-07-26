@@ -6,7 +6,7 @@ import socket
 import requests
 
 LOG_PATH = "/app/logs/keepalive-cron.log"
-URL = "http://uhnauyno.deploy.cx/status"
+URL = "https://uhnauyno.deploy.cx/status"
 INTERVAL = 60  # seconds
 
 # ──────────────── Логирование ──────────────── #
