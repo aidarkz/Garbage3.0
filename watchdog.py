@@ -1,16 +1,21 @@
-# watchdog.py
-import subprocess
+import os
 import time
-import logging
+import signal
 
-logging.basicConfig(level=logging.INFO, format="[WATCHDOG] %(asctime)s %(message)s")
+TARGET = "main.py"
+CHECK_INTERVAL = 10
 
-INTERVAL = 300  # раз в 5 минут (можно увеличить до 10-15 мин)
+def is_main_running():
+    try:
+        output = os.popen("ps aux").read()
+        return TARGET in output
+    except Exception:
+        return False
+
+def restart_main():
+    os.system("pkill -f 'python3 /app/main.py'")
 
 while True:
-    logging.info("Restarting keepalive-cron via supervisorctl...")
-    try:
-        subprocess.run(["supervisorctl", "restart", "keepalive"], check=True)
-    except Exception as e:
-        logging.error(f"Restart failed: {e}")
-    time.sleep(INTERVAL)
+    if not is_main_running():
+        restart_main()
+    time.sleep(CHECK_INTERVAL)
