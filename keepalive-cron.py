@@ -1,44 +1,35 @@
-#!/usr/bin/env python3
-import logging
-import http.client
 import time
-from urllib.parse import urlparse
+import logging
+import sys
+import requests
 
-URL = "https://uhnauyno.deploy.cx/status"
-DELAY = 30  # секунд
+CHECK_URL = "http://egwufhlp.deploy.cx/status"
+INTERVAL_SECONDS = 30
 
+LOG_FILE = "/app/logs/keepalive-cron.log"
 logging.basicConfig(
-    filename="/app/logs/keepalive-cron.log",
+    filename=LOG_FILE,
     level=logging.INFO,
     format="[%(asctime)s] %(levelname).1s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-def ping(url):
-    parsed = urlparse(url)
-    host = parsed.hostname
-    path = parsed.path or "/"
-    port = parsed.port or (443 if parsed.scheme == "https" else 80)
-
+def ping_remote():
     try:
-        conn_class = http.client.HTTPSConnection if parsed.scheme == "https" else http.client.HTTPConnection
-        conn = conn_class(host, port, timeout=10)
-        headers = {
-            "User-Agent": "Mozilla/5.0 (keepalive-cron)",
-            "Accept": "*/*",
-            "Connection": "close",
-        }
-        conn.request("GET", path, headers=headers)
-        resp = conn.getresponse()
-        conn.close()
-
-        if 200 <= resp.status < 300:
-            logging.info(f"🟢 keepalive-cron запущен. {resp.status=}")
+        resp = requests.get(CHECK_URL, timeout=5)
+        if resp.status_code == 200:
+            logging.info(f"🟢 remote OK: {CHECK_URL}")
+            return True
         else:
-            logging.warning(f"⚠️ ping {url} → {resp.status}")
+            logging.warning(f"⚠️ remote {CHECK_URL} → {resp.status_code}")
+            return False
     except Exception as e:
-        logging.error(f"🔥 ошибка ping {url} → {type(e).__name__}: {e}")
+        logging.warning(f"❌ remote error: {e}")
+        return False
 
 if __name__ == "__main__":
     while True:
-        ping(URL)
-        time.sleep(DELAY)
+        if not ping_remote():
+            logging.error("🛑 Перезапуск контейнера, т.к. remote недоступен")
+            sys.exit(1)
+        time.sleep(INTERVAL_SECONDS)
