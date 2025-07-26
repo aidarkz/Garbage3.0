@@ -5,8 +5,8 @@ import requests
 
 CHECK_URL = "http://egwufhlp.deploy.cx/status"
 INTERVAL_SECONDS = 30
-
 LOG_FILE = "/app/logs/keepalive-cron.log"
+
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.INFO,
