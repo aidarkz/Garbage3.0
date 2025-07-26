@@ -3,7 +3,7 @@ import logging
 import sys
 import requests
 
-CHECK_URL = "http://egwufhlp.deploy.cx/status"
+CHECK_URL = "http://127.0.0.1:8282/status"
 INTERVAL_SECONDS = 30
 LOG_FILE = "/app/logs/keepalive-cron.log"
 
