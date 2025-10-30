@@ -1,10 +1,12 @@
-#!/bin/sh
+#!/bin/bash
+set -e
 
-# Запускаем hls-proxy в фоне
-/opt/hlsp/hls-proxy &
+# Запускаем hls-proxy в фоне (без -quit!)
+/opt/hlsp/hls-proxy -address 0.0.0.0 -port 8080 -save &
+HLS_PID=$!
 
-# Запускаем FastAPI-прокси на Uvicorn в фоне
-uvicorn stalker_hls_proxy:app --host 0.0.0.0 --port 8080 &
+# Запускаем nginx в foreground (важно: -g 'daemon off;')
+nginx -g 'daemon off;'
 
-# Главным процессом остаётся nginx (контейнер жив, пока жив nginx)
-nginx
+# Если nginx упадёт — убьём hls-proxy
+kill $HLS_PID
