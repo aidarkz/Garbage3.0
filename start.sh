@@ -3,13 +3,15 @@ set -e
 
 echo "=== Starting HLS Proxy ==="
 
-# === Создаём конфиги, если их нет ===
+# Создаём директории
 mkdir -p /opt/hlsp/cache
 
+# default.json — ЯВНО порт 8080 и 127.0.0.1
 if [ ! -f /opt/hlsp/default.json ]; then
   cat > /opt/hlsp/default.json << 'EOF'
 {
   "port": 8080,
+  "address": "127.0.0.1",
   "save": true,
   "cache": true,
   "logLevel": "info"
@@ -17,12 +19,11 @@ if [ ! -f /opt/hlsp/default.json ]; then
 EOF
 fi
 
-if [ ! -f /opt/hlsp/groups.json ]; then
-  echo '[]' > /opt/hlsp/groups.json
-fi
+# groups.json
+[ ! -f /opt/hlsp/groups.json ] && echo '[]' > /opt/hlsp/groups.json
 
-if [ ! -f /opt/hlsp/local.json ]; then
-  cat > /opt/hlsp/local.json << 'EOF'
+# local.json
+[ ! -f /opt/hlsp/local.json ] && cat > /opt/hlsp/local.json << 'EOF'
 {
   "groups": [],
   "plugins": [
@@ -35,13 +36,11 @@ if [ ! -f /opt/hlsp/local.json ]; then
   "playlistTimeout": 30
 }
 EOF
-fi
 
-# === Запуск nginx в фоне (foreground mode) ===
-echo "Starting nginx..."
+# Запуск nginx
+echo "Starting nginx on port 80..."
 nginx -g 'daemon off;' &
-NGINX_PID=$!
 
-# === Запуск hls-proxy как PID 1 (через exec) ===
-echo "Starting hls-proxy on 0.0.0.0:8080..."
-exec /opt/hlsp/hls-proxy -address 0.0.0.0 -port 8080 -save
+# Запуск hls-proxy на 127.0.0.1:8080
+echo "Starting hls-proxy on 127.0.0.1:8080..."
+exec /opt/hlsp/hls-proxy
